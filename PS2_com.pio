@@ -1,0 +1,55 @@
+; pin 0 - data
+; pin 1 - clock
+
+
+;Notes on the reads and write.  
+;both should be done on the middle of the clock rise
+
+.program ps2_com
+.side_set 1 opt
+
+check:
+    JMP !OSRE bitLoopOut
+    JMP PIN  check     ;clock is low data's coming in
+
+    wait 1 pin 1 [7]
+    nop [7]
+    SET PINDIRS 2 ;;turn clock to output
+
+    set x,9 ;10 cycles grab all the data
+bitloopIn:
+    nop side_set 0 [3]
+    nop side_set 1 [1]
+    in pins, 1 side_set 1
+    jmp X-- bitloopIn side_set 1 
+    
+ 
+
+    SET PINDIRS 3 [1] side_set 0;this will set data to output making it high
+    Set PINS 0 [2]
+    irq  set 0 side_set 1
+    jmp end side_set 1
+
+
+
+bitLoopOut:
+    set PINS 3
+    SET PINDIRS 3 ; set them both to output 
+    set PINS 2    ; set dataLine low clock high
+    set PINS 0   [3] ; set both low
+    set x, 8    side_set 1   [1]  ; 9 bit counter loop data
+bitLoopOutLoop:
+    out PINS, 1  side_set 1  [1]  ;
+    nop side_set 0  [3]  ; side steps so i don't mess with the pin output
+    JMP x-- bitLoopOutLoop side_set 1 [1]
+    
+    ;This is just the stop bit
+    set PINS 1  side_set 1 [1]
+    nop side_set 0 [3]
+
+end:
+    set PINS 3
+    set PINDIRS 0 ; set them both to being input
+; turn output direction here to inputs
+    ;jmp check
+
