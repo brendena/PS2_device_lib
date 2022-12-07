@@ -7,6 +7,7 @@
 
 .program ps2_com
 .side_set 1 opt
+.wrap_target
 
 check:
     JMP !OSRE bitLoopOut
@@ -27,7 +28,7 @@ bitloopIn:
 
     SET PINDIRS 3 [1] side_set 0;this will set data to output making it high
     Set PINS 0 [2]
-    irq  set 0 side_set 1
+    irq  set 0 rel side_set 1
     jmp end side_set 1
 
 
@@ -50,6 +51,4 @@ bitLoopOutLoop:
 end:
     set PINS 3
     set PINDIRS 0 ; set them both to being input
-; turn output direction here to inputs
-    ;jmp check
 

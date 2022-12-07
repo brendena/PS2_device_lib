@@ -70,7 +70,14 @@ void ps2_rx_mouse_event(void)
     static unsigned char sentDataPos = 0;
     static unsigned short sentCommand = 0;
 
-    pio_interrupt_clear(ps2MDev.pioBlock, 0);
+    //printf("MOUSE [irq] %d\n",ps2MDev.pioBlock->irq &0b1111);
+
+
+    pio_interrupt_clear(ps2MDev.pioBlock, ps2MDev.sm);
+
+    if(pio_sm_is_rx_fifo_empty(ps2MDev.pioBlock, ps2MDev.sm)){
+        return;
+    }
 
     uint16_t code = *((io_rw_16*)&ps2MDev.pioBlock->rxf[ps2MDev.sm] + 1);
     code = code >> 6; //remove start bit and no data

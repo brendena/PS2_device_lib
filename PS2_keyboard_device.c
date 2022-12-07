@@ -32,25 +32,31 @@ void ps2_tx_blocking(unsigned char message, unsigned char extension, unsigned ch
 void ps2_rx_keyboard_event(void){
     static unsigned char sentDataPos = 0;
 
-    pio_interrupt_clear(ps2KDev.pioBlock, 0);
-    printf("----got here\n");
+    pio_interrupt_clear(ps2KDev.pioBlock, ps2KDev.sm);
+    //printf("KEY [irq] %d\n",ps2KDev.pioBlock->irq &0b1111);
+
+    if(pio_sm_is_rx_fifo_empty(ps2KDev.pioBlock, ps2KDev.sm)){
+        return;
+    }
+    
     uint16_t code = *((io_rw_16*)&ps2KDev.pioBlock->rxf[ps2KDev.sm] + 1);
     code = code >> 6; //remove start bit and no data
     code &= 0xff; //then strip the stop and parity 
-
     if(sentDataPos == 0)
     {
+        
         if(code == PS2_COMMANDS_SET_LEDS){
-            printf("got here\n");
+            printf("[Led COMMAND] \n");
             PS2_device_send(PS2_ACK_RESPONSE);
             sentDataPos = 1;
+            sentCommand = PS2_COMMANDS_SET_LEDS;
         }
         else if(code == 0xFE){
-            printf("repeat\n");
+            printf("REPEAT COMMAND]\n");
             PS2_device_send(0x0);
         }
         else {
-            printf("don't know %d\n",code);
+            printf("[UNKOWN COMMAND] %d\n",code);
             PS2_device_send(PS2_ACK_RESPONSE);
         }
     }
@@ -58,12 +64,15 @@ void ps2_rx_keyboard_event(void){
     {
         if(PS2_COMMANDS_SET_LEDS == sentCommand){
             //this will be your LED your using
+            //currently controlled by USB class
             PS2_device_send(PS2_ACK_RESPONSE);
         }
         else{
-            printf("don't know what happened send 2 - %d\n",code);
+            printf("don't know what happened send 2 - %d sent commands\n",code, sentCommand);
             PS2_device_send(PS2_ACK_RESPONSE);
         }
+        sentCommand = 0;
+        sentDataPos = 0;
     }
     else
     {

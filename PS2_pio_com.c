@@ -25,7 +25,12 @@ void ps2_device_init(PS2_Device_PIO * device, void  (*callBack)(void)) {
     gpio_pull_up(clkPin);
     //setup pio
     device->sm = sm = pio_claim_unused_sm(pio, true);
-    uint offset = pio_add_program(pio, &ps2_com_program);
+    //pio_can_add_program
+    uint offset = 32 - ps2_com_program.length;
+    if(pio_can_add_program(pio, &ps2_com_program)){
+        offset = pio_add_program(pio, &ps2_com_program);
+    }
+    printf("offset %d\n",offset);
     pio_sm_config c = ps2_com_program_get_default_config(offset);
 
     sm_config_set_set_pins(&c, gpio,2);
@@ -60,9 +65,14 @@ void ps2_device_init(PS2_Device_PIO * device, void  (*callBack)(void)) {
     float div = (float)clock_get_hz(clk_sys) / (8 * 16700);
     sm_config_set_clkdiv(&c, div);
 
-
-    pio_set_irq0_source_enabled(pio, pis_interrupt0, true);
-    irq_set_exclusive_handler(irq, callBack);
+    printf("sm %d\n", pis_interrupt0 + sm);
+    if(device->pioNum == 0){
+        pio_set_irq0_source_enabled(pio, pis_interrupt0 + sm, true);
+    }
+    else{
+        pio_set_irq1_source_enabled(pio, pis_interrupt0 + sm, true);
+    }
+    irq_add_shared_handler(irq, callBack,1);
     irq_set_enabled(irq, true);
 
     sleep_ms(100);//some devices have a little jitter at start
