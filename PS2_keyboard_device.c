@@ -32,8 +32,14 @@ void ps2_tx_blocking(unsigned char message, unsigned char extension, unsigned ch
 void ps2_rx_keyboard_event(void){
     static unsigned char sentDataPos = 0;
 
+    printf("keyboard interrupt\n");
+
+    //not keyboard interrupt - continue
+    if(!pio_interrupt_get(ps2KDev.pioBlock, ps2KDev.sm)){
+        return;
+    }
+
     pio_interrupt_clear(ps2KDev.pioBlock, ps2KDev.sm);
-    //printf("KEY [irq] %d\n",ps2KDev.pioBlock->irq &0b1111);
 
     if(pio_sm_is_rx_fifo_empty(ps2KDev.pioBlock, ps2KDev.sm)){
         return;

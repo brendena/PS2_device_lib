@@ -70,9 +70,11 @@ void ps2_rx_mouse_event(void)
     static unsigned char sentDataPos = 0;
     static unsigned short sentCommand = 0;
 
-    //printf("MOUSE [irq] %d\n",ps2MDev.pioBlock->irq &0b1111);
-
-
+    printf("mouse got interrupt\n");
+    //not mouse interrupt - continue
+    if(!pio_interrupt_get(ps2MDev.pioBlock, ps2MDev.sm)){
+        return;
+    }
     pio_interrupt_clear(ps2MDev.pioBlock, ps2MDev.sm);
 
     if(pio_sm_is_rx_fifo_empty(ps2MDev.pioBlock, ps2MDev.sm)){
